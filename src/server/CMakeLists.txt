@@ -7,6 +7,7 @@ add_executable(ChatServer ${SRC_LIST})
 target_include_directories(ChatServer
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/../../muduo/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../thirdparty
 )
 
 
