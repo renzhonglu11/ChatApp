@@ -14,14 +14,5 @@
         "CMAKE_EXPORT_COMPILE_COMMANDS": "YES"
       }
     }
-  ],
-  "buildPresets": [
-    {
-      "name": "ChatServer",
-      "description": "",
-      "displayName": "",
-      "targets": ["ChatServer"],
-      "configurePreset": "GCC 13.3.0 x86_64-linux-gnu"
-    }
   ]
 }
