@@ -13,10 +13,14 @@ public:
         this->_id = id;
         this->_name = name;
         this->_password = password;
+        this->_state = state;
     }
 
     int getId() const { return _id; }
     void setId(int id) { this->_id = id; }
+
+    string getState() const { return this->_state; }
+    void setState(const string &state) { this->_state = state; }
 
     string getName() const { return this->_name; }
     void setName(const string &name) { this->_name = name; }
@@ -28,4 +32,5 @@ private:
     int _id;          // User ID
     string _name;     // Username
     string _password; // User password
+    string _state;    // User state: online/offline
 };
