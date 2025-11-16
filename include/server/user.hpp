@@ -28,7 +28,7 @@ public:
     string getPassword() const { return this->_password; }
     void setPassword(const string &password) { this->_password = password; }
 
-private:
+protected:
     int _id;          // User ID
     string _name;     // Username
     string _password; // User password
