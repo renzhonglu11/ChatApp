@@ -4,6 +4,7 @@
 #include "json.hpp"
 #include "chatservice.hpp"
 #include <iostream>
+#include <muduo/base/Logging.h>
 
 using json = nlohmann::json;
 
@@ -32,6 +33,7 @@ void ChatServer::onConnection(const TcpConnectionPtr &conn)
 {
     if (!conn->connected())
     {
+        ChatService::instance()->clientCloseException(conn);
         conn->shutdown();
     }
 }
@@ -39,11 +41,44 @@ void ChatServer::onConnection(const TcpConnectionPtr &conn)
 void ChatServer::onMessage(const TcpConnectionPtr &conn, Buffer *buf, Timestamp receiveTime)
 {
     string msg = buf->retrieveAllAsString();
-    conn->send(msg);
-    json js = json::parse(msg);
 
-    // 通过js["msgid"]来获业务handler -> conn, js, time
-    // The code does not need to be changed when the service logic is changed
-    auto msgHandler = ChatService::instance()->getHandler(js["msgid"].get<int>());
-    msgHandler(conn, js, receiveTime);
+    // Filter out non-json format messages
+    bool hasControl = false;
+    for (unsigned char c : msg)
+    {
+        if (c < 0x20 && c != '\n' && c != '\r' && c != '\t')
+        {
+            hasControl = true;
+            break;
+        }
+    }
+    if (msg.empty() || hasControl)
+    {
+        LOG_WARN << "Discarding non-JSON/control payload size=" << msg.size();
+        return; // do not parse
+    }
+
+    // Quick JSON accept check
+    if (!json::accept(msg))
+    {
+        LOG_WARN << "Invalid JSON text: " << msg;
+        return;
+    }
+    // conn->send(msg);
+
+    try
+    {
+        json js = json::parse(msg);
+
+        // conn->send(js.dump()); // For debug
+
+        // 通过js["msgid"]来获业务handler -> conn, js, time
+        // The code does not need to be changed when the service logic is changed
+        auto msgHandler = ChatService::instance()->getHandler(js["msgid"].get<int>());
+        msgHandler(conn, js, receiveTime);
+    }
+    catch (const std::exception &e)
+    {
+        LOG_ERROR << "JSON/handler error: " << e.what();
+    }
 }
