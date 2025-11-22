@@ -1,14 +1,11 @@
 
 aux_source_directory(. SRC_LIST)
 aux_source_directory(./db DB_LIST)
+aux_source_directory(./model MODEL_LIST)
 
-add_executable(ChatServer ${SRC_LIST} ${DB_LIST})
 
-# Header search paths (Muduo + your project include)
-target_include_directories(ChatServer
-    PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../muduo/include
-)
+
+add_executable(ChatServer ${SRC_LIST} ${DB_LIST} ${MODEL_LIST})
 
 
 # Link Muduo static libraries

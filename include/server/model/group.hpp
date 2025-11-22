@@ -35,9 +35,14 @@ public:
         return this->_desc;
     }
 
-    std::vector<GroupUser> &getUsers()
+    const std::vector<GroupUser> &getUsers() const
     {
         return this->_userVec;
+    }
+
+    void addUser(const GroupUser &user)
+    {
+        this->_userVec.push_back(user);
     }
 
 private:
