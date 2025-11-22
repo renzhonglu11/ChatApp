@@ -3,6 +3,7 @@
 #include <string>
 #include <muduo/base/Logging.h>
 #include <vector>
+#include "group.hpp"
 
 ChatService *ChatService::instance()
 {
@@ -92,6 +93,7 @@ void ChatService::login(const TcpConnectionPtr &conn, json &js, Timestamp time)
             vector<string> offlinemsgs = _offLineMsgModel.query(id);
             if (!offlinemsgs.empty())
             {
+
                 response["offlinemsg"] = offlinemsgs;
                 // Delete offline messages from database
                 _offLineMsgModel.remove(id);
@@ -111,6 +113,33 @@ void ChatService::login(const TcpConnectionPtr &conn, json &js, Timestamp time)
                     friendVec.push_back(friendjs);
                 }
                 response["friends"] = friendVec;
+            }
+
+            // Check group list
+            vector<Group> groups = _groupModel.queryGroups(id);
+            if (!groups.empty())
+            {
+                vector<json> groupVec;
+                for (Group &group : groups)
+                {
+                    json groupjs;
+                    groupjs["id"] = group.getId();
+                    groupjs["name"] = group.getName();
+                    groupjs["desc"] = group.getDesc();
+                    vector<json> userVec;
+                    // get users of the group
+                    for (auto &user : group.getUsers())
+                    {
+                        json userjs;
+                        userjs["id"] = user.getId();
+                        userjs["name"] = user.getName();
+                        userjs["state"] = user.getState();
+                        userVec.push_back(userjs);
+                    }
+                    groupjs["users"] = userVec;
+                    groupVec.push_back(groupjs);
+                }
+                response["groups"] = groupVec;
             }
 
             conn->send(response.dump());
@@ -133,11 +162,24 @@ void ChatService::reg(const TcpConnectionPtr &conn, json &js, Timestamp time)
     string name = js["name"];
     string password = js["password"];
 
+    json response;
+
+    // Check if username already exists
+    User existingUser = _userModel.queryByName(name);
+    if (existingUser.getId() != -1)
+    {
+        // username already taken
+        response["msgid"] = REG_MSG_ACK;
+        response["errno"] = 2;
+        response["errmsg"] = "username already exists!";
+        conn->send(response.dump());
+        return;
+    }
+
     User user;
     user.setName(name);
     user.setPassword(password);
     bool state = _userModel.insert(user); // decouple database operation
-    json response;
 
     if (state)
     {
@@ -153,6 +195,7 @@ void ChatService::reg(const TcpConnectionPtr &conn, json &js, Timestamp time)
         // registration failed
         response["msgid"] = REG_MSG_ACK;
         response["errno"] = 1;
+        response["errmsg"] = "registration failed!";
         conn->send(response.dump());
     }
 }
@@ -228,4 +271,71 @@ void ChatService::addFriend(const TcpConnectionPtr &conn, json &js, Timestamp ti
     }
 
     LOG_ERROR << "Add friend failed: invalid user IDs " << userId << " or " << friendId;
+}
+
+void ChatService::createGroup(const TcpConnectionPtr &conn, json &js, Timestamp time)
+{
+
+    // Implementation for creating a group
+    int userId = js["id"].get<int>();
+    string groupName = js["groupname"];
+    string groupDesc = js["groupdesc"];
+
+    Group group(-1, groupName, groupDesc);
+
+    if (_groupModel.createGroup(group))
+    {
+        if (_groupModel.addGroup(userId, group.getId(), "creator")) // Add creator to the group
+        {
+            LOG_INFO << "User " << userId << " created group " << groupName;
+
+            json response;
+            response["msgid"] = CREATE_GROUP_MSG_ACK;
+            response["errno"] = 0; // success
+            response["groupid"] = group.getId();
+            response["groupname"] = group.getName();
+            conn->send(response.dump());
+        }
+    }
+}
+
+void ChatService::addGroup(const TcpConnectionPtr &conn, json &js, Timestamp time)
+{
+    // Implementation for adding a user to a group
+    int userId = js["id"].get<int>();
+    int groupId = js["groupid"].get<int>();
+
+    if (_groupModel.addGroup(userId, groupId, "member"))
+    {
+        LOG_INFO << "User " << userId << " joined group " << groupId;
+        // json response;
+        // response["msgid"] = ADD_GROUP_MSG;
+        // response["errno"] = 0; // success
+        // conn->send(response.dump());
+    }
+}
+
+void ChatService::groupChat(const TcpConnectionPtr &conn, json &js, Timestamp time)
+{
+    int groupId = js["groupid"].get<int>();
+    int fromId = js["id"].get<int>();
+
+    // Get all users in the group except the sender
+    vector<int> userIds = _groupModel.queryGroupUsers(groupId, fromId);
+
+    lock_guard<mutex> lock(_connMutex);
+    for (int userId : userIds)
+    {
+        auto it = _userConnMap.find(userId);
+        if (it != _userConnMap.end())
+        {
+            // User is online, send the message directly
+            it->second->send(js.dump());
+        }
+        else
+        {
+            // User is offline, store the message
+            _offLineMsgModel.insert(userId, js.dump());
+        }
+    }
 }

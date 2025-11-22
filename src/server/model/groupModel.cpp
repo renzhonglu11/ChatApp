@@ -22,7 +22,7 @@ bool GroupModel::createGroup(Group &group)
 }
 
 // Add user to group
-void GroupModel::addGroup(int userId, int groupId, const std::string &role)
+bool GroupModel::addGroup(int userId, int groupId, const std::string &role)
 {
     char sql[1024] = {0};
     sprintf(sql, "insert into groupuser values(%d, %d, '%s');",
@@ -33,8 +33,10 @@ void GroupModel::addGroup(int userId, int groupId, const std::string &role)
 
     if (mysql.connect())
     {
-        mysql.update(sql);
+        return mysql.update(sql);
     }
+
+    return false;
 }
 
 // Query the groups that the user has joined
@@ -79,7 +81,8 @@ std::vector<Group> GroupModel::queryGroups(int userId)
                 user.setName(row[1]);
                 user.setState(row[2]);
                 user.setRole(row[3]);
-                group.getUsers().push_back(user);
+                // group.getUsers().push_back(user);
+                group.addUser(user);
             }
             mysql_free_result(res);
         }
