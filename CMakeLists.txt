@@ -13,6 +13,11 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/server/db)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/server/model)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/thirdparty)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/muduo/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/server/redis)
+include_directories(/usr/local/include)
+
+# Link directories
+link_directories(/usr/local/lib)
 
 
 

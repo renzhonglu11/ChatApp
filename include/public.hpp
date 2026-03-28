@@ -16,7 +16,9 @@ enum EnMsgType
     CREATE_GROUP_MSG, // Create group message
     CREATE_GROUP_MSG_ACK,
     ADD_GROUP_MSG, // Add group message
-    GROUP_CHAT_MSG // Group chat message
+    GROUP_CHAT_MSG, // Group chat message
+
+    LOGOUT_MSG
 };
 
 // {"msgid":1,"id":1,"password":"1234"}

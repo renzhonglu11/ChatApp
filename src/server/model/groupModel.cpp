@@ -25,7 +25,7 @@ bool GroupModel::createGroup(Group &group)
 bool GroupModel::addGroup(int userId, int groupId, const std::string &role)
 {
     char sql[1024] = {0};
-    sprintf(sql, "insert into groupuser values(%d, %d, '%s');",
+    sprintf(sql, "insert into groupuser(userid, groupid, grouprole) values(%d, %d, '%s');",
             userId, groupId, role.c_str());
 
     MySQL mysql;
@@ -68,7 +68,7 @@ std::vector<Group> GroupModel::queryGroups(int userId)
     // Query the users of each group
     for (Group &group : groupVec)
     {
-        sprintf(sql, "select a.id, a.name, a.state, b.role from user a inner join groupuser b on b.userid = a.id where b.groupid = %d;", group.getId());
+        sprintf(sql, "select a.id, a.name, a.state, b.grouprole from user a inner join groupuser b on b.userid = a.id where b.groupid = %d;", group.getId());
 
         MYSQL_RES *res = mysql.query(sql);
         if (res != nullptr)
