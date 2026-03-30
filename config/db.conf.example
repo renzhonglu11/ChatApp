@@ -1,0 +1,8 @@
+# Copy this file to config/db.conf and fill in your real credentials.
+# Lines beginning with # are comments.
+
+server=127.0.0.1
+user=root
+password=change_me
+database=chat
+port=3306

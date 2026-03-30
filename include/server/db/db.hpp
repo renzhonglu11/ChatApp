@@ -5,13 +5,7 @@
 
 using namespace std;
 
-static string server = "127.0.0.1";
-static string user = "root";
-static string password = "REMOVED";
-static string database = "chat";
-
-class MySQL
-{
+class MySQL {
 public:
     MySQL();
     ~MySQL();
@@ -22,10 +16,15 @@ public:
     bool update(string sql);
 
     // Query operation
-    MYSQL_RES *query(string sql);
+    MYSQL_RES* query(string sql);
 
-    MYSQL *getConnection();
+    MYSQL* getConnection();
 
 private:
-    MYSQL *_conn;
+    MYSQL* _conn;
+    string _server;
+    string _user;
+    string _password;
+    string _database;
+    unsigned int _port;
 };
